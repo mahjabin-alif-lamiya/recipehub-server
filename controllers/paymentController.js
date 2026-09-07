@@ -2,14 +2,25 @@ import Stripe from "stripe";
 import { ObjectId } from "mongodb";
 import { getCollections } from "../config/db.js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 const PREMIUM_PRICE_CENTS = 999; // $9.99 one-time premium membership
+
+// Created lazily (only when a payment route is actually called) so
+// the server doesn't crash on startup if STRIPE_SECRET_KEY isn't
+// set yet.
+function getStripe() {
+  if (!process.env.STRIPE_SECRET_KEY) {
+    const err = new Error("Stripe is not configured yet. Add STRIPE_SECRET_KEY to .env.");
+    err.statusCode = 500;
+    throw err;
+  }
+  return new Stripe(process.env.STRIPE_SECRET_KEY);
+}
 
 // POST /api/payments/create-checkout-session
 // type: "recipe" (buy one recipe) | "premium" (unlock unlimited recipes)
 export async function createCheckoutSession(req, res, next) {
   try {
+    const stripe = getStripe();
     const { type, recipeId } = req.body;
     const { recipes } = getCollections();
 
@@ -65,6 +76,7 @@ export async function stripeWebhook(req, res) {
   let event;
 
   try {
+    const stripe = getStripe();
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.error("Webhook signature verification failed:", err.message);
