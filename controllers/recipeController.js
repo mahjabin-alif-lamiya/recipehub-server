@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { getCollections } from "../config/db.js";
 
 const FREE_RECIPE_LIMIT = 2;
+const DEFAULT_PRICE = 1.99;
 
 // GET /api/recipes  — server-side pagination + category filter ($in) + search
 export async function getRecipes(req, res, next) {
@@ -121,6 +122,7 @@ export async function createRecipe(req, res, next) {
       cuisineType,
       difficultyLevel,
       preparationTime,
+      price,
       ingredients,
       instructions,
     } = req.body;
@@ -129,6 +131,8 @@ export async function createRecipe(req, res, next) {
       return res.status(400).json({ message: "Please fill in all required recipe fields." });
     }
 
+    const parsedPrice = Number(price);
+
     const newRecipe = {
       recipeName,
       recipeImage: recipeImage || "",
@@ -136,6 +140,7 @@ export async function createRecipe(req, res, next) {
       cuisineType,
       difficultyLevel: difficultyLevel || "Easy",
       preparationTime: preparationTime || "",
+      price: parsedPrice > 0 ? parsedPrice : DEFAULT_PRICE,
       ingredients,
       instructions,
       authorId: req.user.id,
@@ -174,6 +179,11 @@ export async function updateRecipe(req, res, next) {
     delete updates.authorEmail;
     delete updates.likesCount;
 
+    if (updates.price !== undefined) {
+      const parsedPrice = Number(updates.price);
+      updates.price = parsedPrice > 0 ? parsedPrice : DEFAULT_PRICE;
+    }
+
     await recipes.updateOne({ _id: recipe._id }, { $set: updates });
     const updated = await recipes.findOne({ _id: recipe._id });
 
@@ -209,9 +219,6 @@ export async function likeRecipe(req, res, next) {
   try {
     const { recipes } = getCollections();
 
-    // Note: mongodb driver v6 returns the document directly (or null)
-    // from findOneAndUpdate — not wrapped in a `.value` property like
-    // older versions did.
     const updatedRecipe = await recipes.findOneAndUpdate(
       { _id: new ObjectId(req.params.id) },
       { $inc: { likesCount: 1 } },

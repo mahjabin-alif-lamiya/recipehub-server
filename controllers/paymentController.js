@@ -3,10 +3,8 @@ import { ObjectId } from "mongodb";
 import { getCollections } from "../config/db.js";
 
 const PREMIUM_PRICE_CENTS = 999; // $9.99 one-time premium membership
+const DEFAULT_RECIPE_PRICE = 1.99;
 
-// Created lazily (only when a payment route is actually called) so
-// the server doesn't crash on startup if STRIPE_SECRET_KEY isn't
-// set yet.
 function getStripe() {
   if (!process.env.STRIPE_SECRET_KEY) {
     const err = new Error("Stripe is not configured yet. Add STRIPE_SECRET_KEY to .env.");
@@ -32,11 +30,12 @@ export async function createCheckoutSession(req, res, next) {
       if (!recipe) {
         return res.status(404).json({ message: "Recipe not found." });
       }
+      const priceInCents = Math.round((recipe.price || DEFAULT_RECIPE_PRICE) * 100);
       lineItem = {
         price_data: {
           currency: "usd",
           product_data: { name: `Recipe: ${recipe.recipeName}` },
-          unit_amount: 199,
+          unit_amount: priceInCents,
         },
         quantity: 1,
       };
