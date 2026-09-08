@@ -44,6 +44,33 @@ export async function getAllRecipesAdmin(req, res, next) {
   }
 }
 
+export async function updateRecipeAdmin(req, res, next) {
+  try {
+    const { recipes } = getCollections();
+    const updates = { ...req.body, updatedAt: new Date() };
+    delete updates._id;
+    delete updates.authorId;
+    delete updates.authorEmail;
+    delete updates.likesCount;
+    delete updates.isFeatured;
+    delete updates.status;
+
+    const result = await recipes.findOneAndUpdate(
+      { _id: new ObjectId(req.params.id) },
+      { $set: updates },
+      { returnDocument: "after" }
+    );
+
+    if (!result.value) {
+      return res.status(404).json({ message: "Recipe not found." });
+    }
+
+    res.status(200).json({ recipe: result.value });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function deleteRecipeAdmin(req, res, next) {
   try {
     const { recipes } = getCollections();
