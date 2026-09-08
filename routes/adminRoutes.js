@@ -6,6 +6,7 @@ import {
   getAllRecipesAdmin,
   deleteRecipeAdmin,
   featureRecipe,
+  updateRecipeAdmin,
   getAdminStats,
 } from "../controllers/adminController.js";
 import { verifyToken } from "../middleware/verifyToken.js";
@@ -20,6 +21,7 @@ router.get("/users", getAllUsers);
 router.patch("/users/:id/block", blockUser);
 router.patch("/users/:id/unblock", unblockUser);
 router.get("/recipes", getAllRecipesAdmin);
+router.put("/recipes/:id", updateRecipeAdmin);
 router.delete("/recipes/:id", deleteRecipeAdmin);
 router.patch("/recipes/:id/feature", featureRecipe);
 
