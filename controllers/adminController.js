@@ -55,17 +55,20 @@ export async function updateRecipeAdmin(req, res, next) {
     delete updates.isFeatured;
     delete updates.status;
 
-    const result = await recipes.findOneAndUpdate(
+    // Note: mongodb driver v6 returns the document directly (or null)
+    // from findOneAndUpdate — not wrapped in a `.value` property like
+    // older versions did.
+    const updatedRecipe = await recipes.findOneAndUpdate(
       { _id: new ObjectId(req.params.id) },
       { $set: updates },
       { returnDocument: "after" }
     );
 
-    if (!result.value) {
+    if (!updatedRecipe) {
       return res.status(404).json({ message: "Recipe not found." });
     }
 
-    res.status(200).json({ recipe: result.value });
+    res.status(200).json({ recipe: updatedRecipe });
   } catch (error) {
     next(error);
   }

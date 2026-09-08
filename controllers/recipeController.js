@@ -208,17 +208,21 @@ export async function deleteRecipe(req, res, next) {
 export async function likeRecipe(req, res, next) {
   try {
     const { recipes } = getCollections();
-    const recipe = await recipes.findOneAndUpdate(
+
+    // Note: mongodb driver v6 returns the document directly (or null)
+    // from findOneAndUpdate — not wrapped in a `.value` property like
+    // older versions did.
+    const updatedRecipe = await recipes.findOneAndUpdate(
       { _id: new ObjectId(req.params.id) },
       { $inc: { likesCount: 1 } },
       { returnDocument: "after" }
     );
 
-    if (!recipe.value) {
+    if (!updatedRecipe) {
       return res.status(404).json({ message: "Recipe not found." });
     }
 
-    res.status(200).json({ likesCount: recipe.value.likesCount });
+    res.status(200).json({ likesCount: updatedRecipe.likesCount });
   } catch (error) {
     next(error);
   }
