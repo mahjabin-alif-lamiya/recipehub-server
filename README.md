@@ -1,4 +1,4 @@
-# RecipeHub — Server
+# RecipeHub ( Server )
 
 Express + MongoDB backend for RecipeHub, a recipe sharing platform. Handles
 authentication, recipe CRUD, favorites, reports, and Stripe payments.
